@@ -6,7 +6,7 @@ with open('README.md', mode='r', encoding='utf-8') as readme_file:
 
 setuptools.setup(
     name="cli-formatter",
-    version="1.0.0",
+    version="1.1.0",
     author="Florian Wahl",
     author_email="florian.wahl.developer@gmail.com",
     description="An utility for cli script to prettify their output",

@@ -1,4 +1,7 @@
 import enum
+import sys
+import os
+import platform
 
 
 class MessageType(enum.Enum):
@@ -25,7 +28,7 @@ COLOR_SEQ = "\033[1;%dm"
 
 COLOR_MAPPING = {
     MessageType.DEBUG: Color.BLUE,
-    MessageType.INFO: Color.WHITE,
+    MessageType.INFO: None,                 # None is no color / neutral
     MessageType.WARNING: Color.YELLOW,
     MessageType.ERROR: Color.RED
 }
@@ -47,21 +50,12 @@ def set_verbosity_level(level: int):
     VERBOSITY_LEVEL = level
 
 
-def __print(message: str, message_type: MessageType = MessageType.INFO, verbosity_level: int = 10):
-    global VERBOSITY_LEVEL
-    if verbosity_level < VERBOSITY_LEVEL:
-        return
-    start_color = COLOR_SEQ % (30 + COLOR_MAPPING[message_type].value)
-    symbol = '[{}] '.format(SYMBOL_MAPPINGS[message_type])
-    print(start_color + symbol + message + RESET_SEQ)
-
-
 def debug(message: str, verbosity_level: int = 10):
     __print(message_type=MessageType.DEBUG, message=message, verbosity_level=verbosity_level)
 
 
 def error(message: str, verbosity_level: int = 10):
-    __print(message_type=MessageType.ERROR, message=message, verbosity_level=verbosity_level)
+    __print(message_type=MessageType.ERROR, message=message, verbosity_level=verbosity_level, output_handle=sys.stderr)
 
 
 def warning(message: str, verbosity_level: int = 10):
@@ -72,6 +66,33 @@ def info(message: str, verbosity_level: int = 10):
     __print(message_type=MessageType.INFO, message=message, verbosity_level=verbosity_level)
 
 
-def colorize_string(text: str, color: Color) -> str:
+def __output_supports_ansi(output_handle) -> bool:
+    """ returns True if the output handle supports ANSI colors otherwise False """
+    if (hasattr(output_handle, "isatty") and output_handle.isatty()) or ('TERM' in os.environ and os.environ['TERM'] == 'ANSI'):
+        if platform.system() == 'Windows' and not ('TERM' in os.environ and os.environ['TERM'] == 'ANSI'):
+            return False
+        else:
+            return True
+    else:
+        return False
+
+
+def colorize_string(text: str, color: Color, output_handle=sys.stdout) -> str:
     """ returns a colored strings """
-    return COLOR_SEQ % (30 + color.value) + text + RESET_SEQ
+    if __output_supports_ansi(output_handle=output_handle):
+        return COLOR_SEQ % (30 + color.value) + text + RESET_SEQ
+    else:
+        return text
+
+
+def __print(message: str, message_type: MessageType = MessageType.INFO, verbosity_level: int = 10, output_handle=sys.stdout):
+    global VERBOSITY_LEVEL
+    if verbosity_level < VERBOSITY_LEVEL:
+        return
+    color = COLOR_MAPPING[message_type]
+    symbol = '[{}] '.format(SYMBOL_MAPPINGS[message_type])
+    if color is None:
+        output_text = symbol + message
+    else:
+        output_text = colorize_string(text=symbol + message, color=color, output_handle=output_handle)
+    print(output_text, file=output_handle)
