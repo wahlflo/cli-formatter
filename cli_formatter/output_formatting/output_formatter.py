@@ -79,7 +79,7 @@ def __output_supports_ansi(output_handle) -> bool:
 
 def colorize_string(text: str, color: Color, output_handle=sys.stdout) -> str:
     """ returns a colored strings """
-    if __output_supports_ansi(output_handle=output_handle):
+    if color is not None and __output_supports_ansi(output_handle=output_handle):
         return COLOR_SEQ % (30 + color.value) + text + RESET_SEQ
     else:
         return text
@@ -91,8 +91,13 @@ def __print(message: str, message_type: MessageType = MessageType.INFO, verbosit
         return
     color = COLOR_MAPPING[message_type]
     symbol = '[{}] '.format(SYMBOL_MAPPINGS[message_type])
-    if color is None:
-        output_text = symbol + message
-    else:
-        output_text = colorize_string(text=symbol + message, color=color, output_handle=output_handle)
+    output_text = colorize_string(text=symbol + message, color=color, output_handle=output_handle)
     print(output_text, file=output_handle)
+
+
+def print_headline_banner(headline: str, color_border=None, color_headline=Color.BLUE):
+    colorized_headline = colorize_string(text=headline, color=color_headline)
+    colorized_headline_border = colorize_string(text=' ' + (len(headline) + 8) * '=', color=color_border)
+    print(colorized_headline_border)
+    print(colorize_string(text=' ||  ', color=color_border) + colorized_headline + colorize_string(text='  ||', color=color_border))
+    print(colorized_headline_border)
